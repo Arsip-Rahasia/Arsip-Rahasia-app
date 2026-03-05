@@ -1,0 +1,56 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --radius-3xl: 1.5rem;
+  --radius-4xl: 2rem;
+  --radius-5xl: 3rem;
+  
+  --color-brand-dark: #001F3F;
+  --color-brand-primary: #3b82f6;
+  --color-brand-success: #10b981;
+}
+
+@layer base {
+  body {
+    @apply font-sans antialiased text-slate-900 bg-[#F1F5F9];
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.03) 0, transparent 50%), 
+      radial-gradient(at 50% 0%, rgba(16, 185, 129, 0.03) 0, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(0, 31, 63, 0.03) 0, transparent 50%);
+  }
+}
+
+.glass {
+  @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-xl shadow-slate-200/50;
+}
+
+.premium-shadow {
+  box-shadow: 0 10px 30px -5px rgba(0, 31, 63, 0.05), 0 4px 10px -2px rgba(0, 31, 63, 0.02);
+}
+
+.animate-in {
+  animation-duration: 0.6s;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: both;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-in-from-bottom {
+  from { transform: translateY(1.5rem); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes zoom-in {
+  from { transform: scale(0.98); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.fade-in { animation-name: fade-in; }
+.slide-in-from-bottom-4 { animation-name: slide-in-from-bottom; }
+.zoom-in-95 { animation-name: zoom-in; }
