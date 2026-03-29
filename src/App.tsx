@@ -25,7 +25,11 @@ import {
   ChevronRight,
   User as UserIcon,
   Lock,
-  Key
+  Key,
+  Handshake,
+  ClipboardList,
+  Gavel,
+  Scale
 } from 'lucide-react';
 import { 
   PieChart, 
@@ -39,6 +43,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { format } from 'date-fns';
 import { useDropzone } from 'react-dropzone';
 import { motion, AnimatePresence } from 'motion/react';
+import { Toaster, toast } from 'sonner';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { saveFile, getFile, deleteFile } from './db';
 import { ArchiveItem, Category, User } from './types';
@@ -327,71 +332,114 @@ export default function App() {
       return Object.entries(counts).map(([name, value]) => ({ name, value }));
     }, [userArchives]);
 
+    const targetChartData = useMemo(() => {
+      const counts: Record<string, number> = {
+        'Kepegawaian': 0,
+        'BAK': 0,
+        'BMN': 0,
+        'HTL': 0
+      };
+      
+      userArchives.forEach(a => {
+        let targetName = 'HTL';
+        if (a.target_user_id === '2') targetName = 'Kepegawaian';
+        else if (a.target_user_id === '3') targetName = 'BAK';
+        else if (a.target_user_id === '4') targetName = 'BMN';
+        
+        counts[targetName]++;
+      });
+      
+      return Object.entries(counts).map(([name, value]) => ({ name, value }));
+    }, [userArchives]);
+
+    const TARGET_COLORS = ['#6366f1', '#ec4899', '#f59e0b', '#10b981'];
+
+    const getCategoryConfig = (category: string) => {
+      switch (category) {
+        case 'Keputusan':
+          return { icon: Gavel, color: 'from-purple-600 to-purple-400', bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-200', shadow: 'shadow-purple-500/30' };
+        case 'Peraturan':
+          return { icon: Scale, color: 'from-emerald-600 to-emerald-400', bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200', shadow: 'shadow-emerald-500/30' };
+        case 'Kontrak':
+          return { icon: Handshake, color: 'from-amber-600 to-amber-400', bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200', shadow: 'shadow-amber-500/30' };
+        case 'Tugas':
+          return { icon: ClipboardList, color: 'from-blue-600 to-blue-400', bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200', shadow: 'shadow-blue-500/30' };
+        default:
+          return { icon: FileText, color: 'from-slate-600 to-slate-400', bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200', shadow: 'shadow-slate-500/30' };
+      }
+    };
+
     return (
-      <div className="space-y-6 md:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="space-y-3 md:space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div>
-            <h2 className="text-xl md:text-4xl font-black text-brand-dark tracking-tight uppercase">Dashboard</h2>
-            <p className="text-xs md:text-base text-slate-500 font-medium mt-1">Ringkasan aktivitas dan statistik arsip digital.</p>
+            <h2 className="text-xl md:text-2xl font-black text-brand-dark tracking-tight uppercase">Dashboard</h2>
+            <p className="text-[9px] md:text-xs text-slate-500 font-medium mt-0.5">Ringkasan aktivitas dan statistik arsip digital.</p>
           </div>
-          <div className="flex items-center space-x-3 bg-white/50 backdrop-blur-md p-1.5 rounded-2xl border border-white/50 shadow-sm">
-            <div className="w-10 h-10 rounded-xl bg-brand-dark text-white flex items-center justify-center shadow-lg">
-              <UserIcon size={20} />
+          <div className="flex items-center space-x-3 bg-white/50 backdrop-blur-md p-1 rounded-xl border border-white/50 shadow-sm">
+            <div className="w-7 h-7 rounded-lg bg-brand-dark text-white flex items-center justify-center shadow-lg">
+              <UserIcon size={14} />
             </div>
-            <div className="pr-4">
-              <p className="text-xs font-black text-brand-dark uppercase tracking-wider">{user?.role === 'admin' ? 'Administrator' : 'Pengguna'}</p>
-              <p className="text-[10px] text-slate-400 font-bold">Sesi Aktif</p>
+            <div className="pr-3">
+              <p className="text-[9px] font-black text-brand-dark uppercase tracking-wider">{user?.role === 'admin' ? 'Administrator' : 'Pengguna'}</p>
+              <p className="text-[7px] text-slate-400 font-bold uppercase tracking-tighter">Sesi Aktif</p>
             </div>
           </div>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 overflow-x-auto pb-4 md:pb-0 scrollbar-hide">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
           {[
-            { label: 'Total Arsip', value: userArchives.length, icon: Archive, color: 'from-blue-600 to-blue-400', shadow: 'shadow-blue-500/20' },
-            { label: 'Keputusan', value: userArchives.filter(a => a.kategori === 'Keputusan').length, icon: FileText, color: 'from-purple-600 to-purple-400', shadow: 'shadow-purple-500/20' },
-            { label: 'Peraturan', value: userArchives.filter(a => a.kategori === 'Peraturan').length, icon: ShieldCheck, color: 'from-emerald-600 to-emerald-400', shadow: 'shadow-emerald-500/20' },
-            { label: 'Kontrak', value: userArchives.filter(a => a.kategori === 'Kontrak').length, icon: Database, color: 'from-amber-600 to-amber-400', shadow: 'shadow-amber-500/20' },
+            { label: 'Total Arsip', value: userArchives.length, icon: Archive, color: 'from-slate-600 to-slate-400', shadow: 'shadow-slate-500/20', text: 'text-slate-600', bg: 'bg-slate-50' },
+            { label: 'Keputusan', value: userArchives.filter(a => a.kategori === 'Keputusan').length, ...getCategoryConfig('Keputusan') },
+            { label: 'Peraturan', value: userArchives.filter(a => a.kategori === 'Peraturan').length, ...getCategoryConfig('Peraturan') },
+            { label: 'Kontrak', value: userArchives.filter(a => a.kategori === 'Kontrak').length, ...getCategoryConfig('Kontrak') },
+            { label: 'Tugas', value: userArchives.filter(a => a.kategori === 'Tugas').length, ...getCategoryConfig('Tugas') },
           ].map((stat, i) => (
             <motion.div 
               key={i}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
-              className="min-w-[200px] md:min-w-0 bg-white p-5 md:p-8 rounded-[2rem] md:rounded-[2.5rem] premium-shadow border border-white/50 relative overflow-hidden group hover:-translate-y-1 transition-all duration-500"
+              className="bg-white p-3 md:p-5 rounded-2xl md:rounded-3xl premium-shadow border border-white/50 relative overflow-hidden group hover:-translate-y-1 transition-all duration-500"
             >
-              <div className={cn("absolute top-0 right-0 w-32 h-32 bg-gradient-to-br opacity-[0.03] rounded-bl-full transition-all duration-500 group-hover:scale-110", stat.color)} />
-              <div className="relative z-10 flex flex-col h-full justify-between">
-                <div className={cn("w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center text-white shadow-lg mb-4 md:mb-6 transition-transform duration-500 group-hover:rotate-6", stat.color, stat.shadow)}>
-                  <stat.icon size={20} />
+              <div className={cn("absolute -top-8 -right-8 w-24 h-24 bg-gradient-to-br opacity-[0.05] blur-2xl rounded-full transition-all duration-700 group-hover:scale-150", stat.color)} />
+              
+              <div className="relative z-10 flex flex-col h-full">
+                <div className={cn(
+                  "w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center bg-white shadow-lg mb-3 md:mb-4 transition-all duration-500 group-hover:scale-110",
+                  stat.shadow
+                )}>
+                  <stat.icon size={18} className={stat.text} />
                 </div>
-                <div>
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{stat.label}</p>
-                  <h3 className="text-2xl md:text-4xl font-black text-brand-dark tracking-tighter">{stat.value}</h3>
+                
+                <div className="space-y-0">
+                  <p className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">{stat.label}</p>
+                  <h3 className="text-xl md:text-2xl font-black text-brand-dark tracking-tighter">{stat.value}</h3>
                 </div>
               </div>
             </motion.div>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-          <div className="lg:col-span-2 bg-white p-5 md:p-10 rounded-[2rem] md:rounded-[3rem] premium-shadow border border-white/50">
-            <div className="flex items-center justify-between mb-6 md:mb-10">
-              <h3 className="text-lg font-black text-brand-dark uppercase tracking-tight">Distribusi Kategori</h3>
-              <div className="flex items-center space-x-2 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1.5 rounded-full">
-                <span className="w-2 h-2 rounded-full bg-brand-success animate-pulse" />
+        <div className={cn("grid gap-4 md:gap-6", user?.role === 'admin' ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1")}>
+          <div className="bg-white p-4 md:p-5 rounded-[1.5rem] md:rounded-[2rem] premium-shadow border border-white/50">
+            <div className="flex items-center justify-between mb-2 md:mb-3">
+              <h3 className="text-[10px] md:text-xs font-black text-brand-dark uppercase tracking-tight">Distribusi Kategori</h3>
+              <div className="flex items-center space-x-2 text-[7px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-full">
+                <span className="w-1 h-1 rounded-full bg-brand-success animate-pulse" />
                 <span>Real-time</span>
               </div>
             </div>
-            <div className="h-[250px] md:h-[400px]">
+            <div className="h-[140px] md:h-[180px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={chartData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={80}
-                    outerRadius={120}
-                    paddingAngle={8}
+                    innerRadius={40}
+                    outerRadius={60}
+                    paddingAngle={6}
                     dataKey="value"
                     stroke="none"
                   >
@@ -401,42 +449,89 @@ export default function App() {
                   </Pie>
                   <Tooltip 
                     contentStyle={{ 
-                      borderRadius: '24px', 
+                      borderRadius: '12px', 
                       border: 'none', 
-                      boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-                      padding: '16px 24px',
-                      fontWeight: 'bold'
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                      padding: '8px 12px',
+                      fontWeight: 'bold',
+                      fontSize: '9px'
                     }} 
                   />
                 </PieChart>
               </ResponsiveContainer>
             </div>
+            <div className="grid grid-cols-4 gap-1 mt-2">
+              {chartData.map((entry, index) => (
+                <div key={index} className="flex flex-col items-center">
+                  <div className="w-1.5 h-1.5 rounded-full mb-1" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                  <span className="text-[7px] font-bold text-slate-400 uppercase truncate w-full text-center">{entry.name}</span>
+                  <span className="text-[9px] font-black text-brand-dark">{entry.value}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="bg-brand-dark p-6 md:p-10 rounded-[3rem] shadow-2xl shadow-blue-900/40 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-brand-success/10 blur-[100px] rounded-full -mr-32 -mt-32" />
-            <div className="relative z-10 h-full flex flex-col">
-              <h3 className="text-xl font-black text-white uppercase tracking-tight mb-10">Detail Kategori</h3>
-              <div className="grid grid-cols-2 lg:grid-cols-1 gap-4 flex-grow">
-                {chartData.map((entry, index) => (
-                  <div key={index} className="bg-white/5 border border-white/10 p-5 rounded-[1.5rem] flex items-center justify-between group hover:bg-white/10 transition-all duration-300">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-3 h-3 rounded-full shadow-[0_0_10px_rgba(0,0,0,0.5)]" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                      <span className="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">{entry.name}</span>
-                    </div>
-                    <span className="text-lg font-black text-white tracking-tighter">{entry.value}</span>
+          {user?.role === 'admin' && (
+            <div className="bg-white p-4 md:p-5 rounded-[1.5rem] md:rounded-[2rem] premium-shadow border border-white/50">
+              <div className="flex items-center justify-between mb-2 md:mb-3">
+                <h3 className="text-[10px] md:text-xs font-black text-brand-dark uppercase tracking-tight">Distribusi Tujuan</h3>
+                <div className="flex items-center space-x-2 text-[7px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-full">
+                  <span className="w-1 h-1 rounded-full bg-brand-primary animate-pulse" />
+                  <span>Real-time</span>
+                </div>
+              </div>
+              <div className="h-[140px] md:h-[180px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={targetChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={60}
+                      paddingAngle={6}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {targetChartData.map((_, index) => (
+                        <Cell key={`cell-target-${index}`} fill={TARGET_COLORS[index % TARGET_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ 
+                        borderRadius: '12px', 
+                        border: 'none', 
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                        padding: '8px 12px',
+                        fontWeight: 'bold',
+                        fontSize: '9px'
+                      }} 
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="grid grid-cols-4 gap-1 mt-2">
+                {targetChartData.map((entry, index) => (
+                  <div key={index} className="flex flex-col items-center">
+                    <div className="w-1.5 h-1.5 rounded-full mb-1" style={{ backgroundColor: TARGET_COLORS[index % TARGET_COLORS.length] }} />
+                    <span className="text-[7px] font-bold text-slate-400 uppercase truncate w-full text-center">{entry.name}</span>
+                    <span className="text-[9px] font-black text-brand-dark">{entry.value}</span>
                   </div>
                 ))}
               </div>
-              <div className="mt-10 pt-8 border-t border-white/10">
-                <div className="flex items-center justify-between text-white">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Kapasitas Sistem</span>
-                  <span className="text-sm font-black tracking-tighter">92% Aman</span>
-                </div>
-                <div className="w-full h-2 bg-white/5 rounded-full mt-4 overflow-hidden">
-                  <div className="w-[92%] h-full bg-gradient-to-r from-brand-success to-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
-                </div>
-              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-brand-dark p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] shadow-lg shadow-blue-900/30 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-brand-success/10 blur-[60px] rounded-full -mr-20 -mt-20" />
+          <div className="relative z-10 h-full flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xs md:text-sm font-black text-white uppercase tracking-tight">Kapasitas Sistem</h3>
+              <span className="text-xs font-black text-brand-success tracking-tighter">92% Aman</span>
+            </div>
+            <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+              <div className="w-[92%] h-full bg-gradient-to-r from-brand-success to-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
             </div>
           </div>
         </div>
@@ -451,6 +546,7 @@ export default function App() {
 
     // List of potential recipients for admin
     const recipients = [
+      { id: '1', name: 'HTL' },
       { id: '2', name: 'Kepegawaian' },
       { id: '3', name: 'BAK' },
       { id: '4', name: 'BMN' }
@@ -468,7 +564,7 @@ export default function App() {
 
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!file) return alert('Pilih file terlebih dahulu');
+      if (!file) return toast.error('Pilih file terlebih dahulu');
       
       setUploading(true);
       try {
@@ -533,14 +629,14 @@ export default function App() {
         }
 
         if (success) {
-          alert('BERHASIL: Dokumen telah disimpan secara permanen di cloud Supabase.');
+          toast.success('BERHASIL: Dokumen telah tersimpan');
           setForm({ nomor: '', nama: '', tanggal: '', kategori: 'Keputusan', target_user_id: '' });
           setFile(null);
           setActiveTab('archive');
         }
       } catch (err: any) {
         console.error('Detailed error:', err);
-        alert(`KESALAHAN PENYIMPANAN:\n${err.message}`);
+        toast.error(`KESALAHAN PENYIMPANAN: ${err.message}`);
       } finally {
         setUploading(false);
       }
@@ -716,9 +812,24 @@ export default function App() {
       return matchesSearch && a.target_user_id === user?.id;
     });
 
+    const getCategoryConfig = (category: string) => {
+      switch (category) {
+        case 'Keputusan':
+          return { icon: Gavel, bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-200' };
+        case 'Peraturan':
+          return { icon: Scale, bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' };
+        case 'Kontrak':
+          return { icon: Handshake, bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200' };
+        case 'Tugas':
+          return { icon: ClipboardList, bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' };
+        default:
+          return { icon: FileText, bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200' };
+      }
+    };
+
     const handleDelete = async (id: string) => {
       if (!isSupabaseConfigured || !supabase) {
-        alert('Fitur hapus dinonaktifkan dalam mode offline/simulasi.');
+        toast.error('Fitur hapus dinonaktifkan dalam mode offline/simulasi.');
         return;
       }
 
@@ -750,7 +861,7 @@ export default function App() {
         setDeletingId(null);
       } catch (err) {
         console.error('Delete error:', err);
-        alert('Gagal menghapus arsip dari database.');
+        toast.error('Gagal menghapus arsip dari database.');
       } finally {
         setLoading(false);
       }
@@ -764,7 +875,7 @@ export default function App() {
           const blobUrl = URL.createObjectURL(blob);
           window.open(blobUrl, '_blank');
         } else {
-          alert('File tidak ditemukan di penyimpanan lokal.');
+          toast.error('File tidak ditemukan di penyimpanan lokal.');
         }
       } else {
         window.open(url, '_blank');
@@ -837,12 +948,15 @@ export default function App() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {filteredArchives.map((item) => (
+                {filteredArchives.map((item) => {
+                  const config = getCategoryConfig(item.kategori);
+                  const Icon = config.icon;
+                  return (
                   <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-10 py-6">
                       <div className="flex items-center space-x-5">
-                        <div className="w-14 h-14 rounded-2xl bg-slate-50 text-brand-dark flex items-center justify-center shadow-sm group-hover:bg-white group-hover:shadow-md transition-all duration-300">
-                          <FileText size={24} />
+                        <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300", config.bg, config.text)}>
+                          <Icon size={24} />
                         </div>
                         <div>
                           <p className="text-base font-black text-brand-dark tracking-tight">{item.nomor}</p>
@@ -853,10 +967,7 @@ export default function App() {
                     <td className="px-10 py-6">
                       <span className={cn(
                         "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm border",
-                        item.kategori === 'Keputusan' && "bg-purple-50 text-purple-600 border border-purple-100",
-                        item.kategori === 'Peraturan' && "bg-emerald-50 text-emerald-600 border border-emerald-100",
-                        item.kategori === 'Kontrak' && "bg-amber-50 text-amber-600 border border-amber-100",
-                        item.kategori === 'Tugas' && "bg-blue-50 text-blue-600 border border-blue-100",
+                        config.bg, config.text, config.border
                       )}>
                         {item.kategori}
                       </span>
@@ -874,7 +985,7 @@ export default function App() {
                           <span className="text-xs font-black text-slate-600 uppercase tracking-wider">
                             {item.target_user_id === '2' ? 'Kepegawaian' : 
                              item.target_user_id === '3' ? 'BAK' : 
-                             item.target_user_id === '4' ? 'BMN' : 'Internal'}
+                             item.target_user_id === '4' ? 'BMN' : 'HTL'}
                           </span>
                         </div>
                       </td>
@@ -907,7 +1018,8 @@ export default function App() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -955,12 +1067,15 @@ export default function App() {
 
           {/* Mobile Card List */}
           <div className="md:hidden divide-y divide-slate-50">
-            {filteredArchives.map((item) => (
+            {filteredArchives.map((item) => {
+              const config = getCategoryConfig(item.kategori);
+              const Icon = config.icon;
+              return (
               <div key={item.id} className="p-4 space-y-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-brand-dark shrink-0 shadow-sm">
-                      <FileText size={20} />
+                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm", config.bg, config.text)}>
+                      <Icon size={20} />
                     </div>
                     <div>
                       <p className="text-sm font-black text-brand-dark leading-tight">{item.nomor}</p>
@@ -969,10 +1084,7 @@ export default function App() {
                   </div>
                   <span className={cn(
                     "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shrink-0 border",
-                    item.kategori === 'Keputusan' && "bg-purple-50 text-purple-600 border-purple-100",
-                    item.kategori === 'Peraturan' && "bg-emerald-50 text-emerald-600 border-emerald-100",
-                    item.kategori === 'Kontrak' && "bg-amber-50 text-amber-600 border-amber-100",
-                    item.kategori === 'Tugas' && "bg-blue-50 text-blue-600 border-blue-100",
+                    config.bg, config.text, config.border
                   )}>
                     {item.kategori}
                   </span>
@@ -1004,7 +1116,8 @@ export default function App() {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
         )}
@@ -1055,20 +1168,20 @@ export default function App() {
       if (!newEmail) return;
       setUsers([...users, { id: Date.now().toString(), email: newEmail, role: 'user' }]);
       setNewEmail('');
-      alert('Pengguna baru berhasil ditambahkan.');
+      toast.success('Pengguna baru berhasil ditambahkan.');
     };
 
     const handleUpdatePassword = (e: React.FormEvent) => {
       e.preventDefault();
-      if (passwords.new !== passwords.confirm) return alert('Konfirmasi password tidak cocok');
-      alert('Password berhasil diperbarui!');
+      if (passwords.new !== passwords.confirm) return toast.error('Konfirmasi password tidak cocok');
+      toast.success('Password berhasil diperbarui!');
       setPasswords({ old: '', new: '', confirm: '' });
     };
 
     const handleResetPassword = (e: React.FormEvent) => {
       e.preventDefault();
       if (!resetEmail) return;
-      alert(`Link reset password telah dikirim ke ${resetEmail}`);
+      toast.success(`Link reset password telah dikirim ke ${resetEmail}`);
       setResetEmail('');
     };
 
@@ -1381,6 +1494,7 @@ FOR ALL USING (true) WITH CHECK (true);`}
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] lg:pl-64">
+      <Toaster position="top-center" richColors />
       <Sidebar />
       
       {/* Mobile Top Header */}
