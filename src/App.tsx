@@ -112,10 +112,17 @@ export default function App() {
         .select('*')
         .order('created_at', { ascending: false });
       
-      // Filter by target_user_id if not admin
-      if (user && user.role !== 'admin') {
-        query = query.eq('target_user_id', user.id);
-      }
+    // Filter by target_user_id if not admin
+    if (user && user.role !== 'admin') {
+      const roleToId: Record<string, string> = {
+        'HTL': '1',
+        'KEPEGAWAIAN': '2',
+        'BAK': '3',
+        'BMN': '4'
+      };
+      const targetId = roleToId[user.role] || user.id;
+      query = query.eq('target_user_id', targetId);
+    }
       
       const { data, error } = await query;
       if (error) throw error;
@@ -142,9 +149,10 @@ export default function App() {
     // Hardcoded users for quick access
     const hardcodedUsers = [
       { email: 'admin', password: 'admin', id: '1', role: 'admin' },
-      { email: 'kepegawaian', password: 'kepegawaian123', id: '2', role: 'user' },
-      { email: 'BAK', password: 'BAK123', id: '3', role: 'user' },
-      { email: 'BMN', password: 'BMN123', id: '4', role: 'user' }
+      { email: 'kepegawaian', password: 'kepegawaian123', id: '2', role: 'KEPEGAWAIAN' },
+      { email: 'BAK', password: 'BAK123', id: '3', role: 'BAK' },
+      { email: 'BMN', password: 'BMN123', id: '4', role: 'BMN' },
+      { email: 'HTL', password: 'HTL123', id: '5', role: 'HTL' }
     ];
 
     const foundUser = hardcodedUsers.find(u => u.email === loginForm.email && u.password === loginForm.password);
@@ -316,7 +324,16 @@ export default function App() {
   const Dashboard = () => {
     const userArchives = useMemo(() => {
       if (user?.role === 'admin') return archives;
-      return archives.filter(a => a.target_user_id === user?.id);
+      
+      const roleToId: Record<string, string> = {
+        'HTL': '1',
+        'KEPEGAWAIAN': '2',
+        'BAK': '3',
+        'BMN': '4'
+      };
+      const targetId = roleToId[user?.role || ''] || user?.id;
+      
+      return archives.filter(a => a.target_user_id === targetId);
     }, [archives, user]);
 
     const chartData = useMemo(() => {
@@ -808,8 +825,18 @@ export default function App() {
                             a.nomor.toLowerCase().includes(searchQuery.toLowerCase());
       
       if (user?.role === 'admin') return matchesSearch;
+      
+      // Map role to target_user_id
+      const roleToId: Record<string, string> = {
+        'HTL': '1',
+        'KEPEGAWAIAN': '2',
+        'BAK': '3',
+        'BMN': '4'
+      };
+      const targetId = roleToId[user?.role || ''] || user?.id;
+      
       // Non-admin only sees files where they are the target
-      return matchesSearch && a.target_user_id === user?.id;
+      return matchesSearch && a.target_user_id === targetId;
     });
 
     const getCategoryConfig = (category: string) => {
@@ -1155,19 +1182,22 @@ export default function App() {
   const SettingsPage = () => {
     const [users, setUsers] = useState<User[]>([
       { id: '1', email: 'admin', role: 'admin' },
-      { id: '2', email: 'kepegawaian', role: 'user' },
-      { id: '3', email: 'BAK', role: 'user' },
-      { id: '4', email: 'BMN', role: 'user' }
+      { id: '2', email: 'kepegawaian', role: 'KEPEGAWAIAN' },
+      { id: '3', email: 'BAK', role: 'BAK' },
+      { id: '4', email: 'BMN', role: 'BMN' },
+      { id: '5', email: 'HTL', role: 'HTL' }
     ]);
     const [newEmail, setNewEmail] = useState('');
+    const [newRole, setNewRole] = useState<User['role']>('user');
     const [passwords, setPasswords] = useState({ old: '', new: '', confirm: '' });
     const [resetEmail, setResetEmail] = useState('');
 
     const addUser = (e: React.FormEvent) => {
       e.preventDefault();
       if (!newEmail) return;
-      setUsers([...users, { id: Date.now().toString(), email: newEmail, role: 'user' }]);
+      setUsers([...users, { id: Date.now().toString(), email: newEmail, role: newRole }]);
       setNewEmail('');
+      setNewRole('user');
       toast.success('Pengguna baru berhasil ditambahkan.');
     };
 
@@ -1213,6 +1243,21 @@ export default function App() {
                     className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-brand-primary outline-none transition-all font-bold"
                     placeholder="email@perusahaan.com"
                   />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2.5 ml-1">Hak Akses</label>
+                  <select 
+                    value={newRole}
+                    onChange={e => setNewRole(e.target.value as User['role'])}
+                    className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-brand-primary outline-none transition-all font-bold appearance-none"
+                  >
+                    <option value="user">User Umum</option>
+                    <option value="admin">Administrator</option>
+                    <option value="BAK">BAK</option>
+                    <option value="KEPEGAWAIAN">KEPEGAWAIAN</option>
+                    <option value="BMN">BMN</option>
+                    <option value="HTL">HTL</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2.5 ml-1">Password Default</label>
@@ -1350,43 +1395,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Database Schema Guide */}
-            <div className="bg-white p-6 md:p-10 rounded-[3rem] premium-shadow border border-white/50 space-y-8">
-              <div className="flex items-center space-x-4 pb-4 border-b border-slate-50">
-                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm">
-                  <Database size={20} />
-                </div>
-                <h3 className="text-lg font-black text-brand-dark uppercase tracking-tight">Panduan Database</h3>
-              </div>
-              <div className="space-y-6">
-                <p className="text-sm text-slate-500 font-medium leading-relaxed">
-                  Gunakan kode SQL ini di Dashboard Supabase jika Anda melihat error "column not found".
-                </p>
-                <div className="bg-slate-900 rounded-2xl p-5 overflow-x-auto border border-slate-800 shadow-inner">
-                  <pre className="text-[10px] md:text-xs text-blue-300 font-mono leading-relaxed">
-{`-- JALANKAN DI SQL EDITOR SUPABASE
-ALTER TABLE archives 
-ADD COLUMN IF NOT EXISTS target_user_id TEXT;
-
-ALTER TABLE archives 
-ADD COLUMN IF NOT EXISTS user_id TEXT;
-
--- Pastikan RLS Aktif
-ALTER TABLE archives ENABLE ROW LEVEL SECURITY;
-
--- Kebijakan Akses (Testing)
-CREATE POLICY "Allow public access" ON archives 
-FOR ALL USING (true) WITH CHECK (true);`}
-                  </pre>
-                </div>
-                <div className="flex items-start space-x-3 p-4 bg-amber-50 rounded-2xl border border-amber-100">
-                  <AlertCircle size={18} className="text-amber-600 shrink-0 mt-0.5" />
-                  <p className="text-xs text-amber-700 font-medium leading-relaxed">
-                    Pastikan juga Anda sudah membuat <b>Bucket Storage</b> bernama <code className="bg-amber-100 px-1 rounded text-amber-900">archives</code> dengan akses Public di menu Storage Supabase.
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
