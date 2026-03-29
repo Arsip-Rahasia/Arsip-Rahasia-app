@@ -1,8 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Bungee&family=Montserrat:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-zing: "Bungee", cursive;
+  --font-brandon: "Montserrat", sans-serif;
   --radius-3xl: 1.5rem;
   --radius-4xl: 2rem;
   --radius-5xl: 3rem;

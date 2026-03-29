@@ -9,6 +9,7 @@ export interface ArchiveItem {
   file_url: string;
   created_at: string;
   user_id: string;
+  target_user_id?: string; // ID of the recipient user
 }
 
 export interface User {
