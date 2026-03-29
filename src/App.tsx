@@ -78,16 +78,8 @@ export default function App() {
   // Login State
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [loginError, setLoginError] = useState('');
-  const [archives, setArchives] = useState<ArchiveItem[]>(() => {
-    const saved = localStorage.getItem('garda_archives');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [archives, setArchives] = useState<ArchiveItem[]>([]);
   const [loading, setLoading] = useState(false);
-
-  // Persist archives to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('garda_archives', JSON.stringify(archives));
-  }, [archives]);
 
   // Fetch Archives
   const fetchArchives = async () => {
@@ -121,19 +113,9 @@ export default function App() {
       }
       
       const { data, error } = await query;
+      if (error) throw error;
       if (data) {
-        // Merge with local files that might not be in Supabase yet
-        const localFiles = archives.filter(a => a.file_url.startsWith('local://'));
-        const combined = [...data];
-        
-        // Add local files that aren't already in the data (by ID)
-        localFiles.forEach(local => {
-          if (!combined.find(remote => remote.id === local.id)) {
-            combined.push(local);
-          }
-        });
-        
-        setArchives(combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+        setArchives(data);
       }
     } catch (err) {
       console.error('Error fetching archives from Supabase:', err);
@@ -496,111 +478,69 @@ export default function App() {
         if (isSupabaseConfigured && supabase) {
           // 1. Upload to Supabase Storage
           const fileExt = file.name.split('.').pop();
-          const fileName = `${Math.random()}.${fileExt}`;
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
           const filePath = `legal-docs/${fileName}`;
           
-          try {
-            const { error: uploadError } = await supabase.storage
-              .from('archives')
-              .upload(filePath, file);
+          const { error: uploadError } = await supabase.storage
+            .from('archives')
+            .upload(filePath, file, {
+              cacheControl: '3600',
+              upsert: false
+            });
 
-            if (uploadError) {
-              if (uploadError.message?.includes('row-level security')) {
-                throw new Error('RLS_ERROR');
-              }
-              throw uploadError;
-            }
-
-            const { data: { publicUrl } } = supabase.storage
-              .from('archives')
-              .getPublicUrl(filePath);
-            
-            finalFileUrl = publicUrl;
-          } catch (storageErr: any) {
-            console.error('Supabase Storage error:', storageErr);
-            if (storageErr.message === 'RLS_ERROR') {
-              alert('Error Keamanan (RLS): Anda perlu menambahkan kebijakan (Policy) di Storage Supabase untuk mengizinkan INSERT pada bucket "archives".');
-            }
-            finalFileUrl = URL.createObjectURL(file);
+          if (uploadError) {
+            console.error('Storage Upload Error:', uploadError);
+            throw new Error(`Gagal Unggah File: ${uploadError.message}. Pastikan bucket "archives" sudah dibuat di Supabase Storage dan RLS Policy sudah diatur ke public.`);
           }
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('archives')
+            .getPublicUrl(filePath);
+          
+          finalFileUrl = publicUrl;
 
           // 2. Save Metadata to DB
-          try {
-            const { error: dbError } = await supabase
-              .from('archives')
-              .insert({
-                nomor: form.nomor,
-                nama: form.nama,
-                tanggal_surat: form.tanggal,
-                kategori: form.kategori,
-                file_url: finalFileUrl,
-                user_id: user?.id || '1',
-                target_user_id: form.target_user_id || null
-              });
-
-            if (dbError) {
-              throw dbError;
-            } else {
-              success = true;
-              fetchArchives(); // Refresh from DB on success
-            }
-          } catch (dbErr) {
-            console.error('Supabase DB error, falling back to local state:', dbErr);
-            const localId = Math.random().toString(36).substring(2, 9);
-            await saveFile(localId, file);
-            finalFileUrl = `local://${localId}`;
-            
-            const newItem: ArchiveItem = {
-              id: localId,
-              nomor: form.nomor,
-              nama: form.nama,
-              tanggal_surat: form.tanggal,
-              kategori: form.kategori,
-              file_url: finalFileUrl,
-              created_at: new Date().toISOString(),
-              user_id: user?.id || '1',
-              target_user_id: form.target_user_id || null
-            };
-            const updatedArchives = [newItem, ...archives];
-            setArchives(updatedArchives);
-            localStorage.setItem('garda_archives', JSON.stringify(updatedArchives));
-            success = true;
-          }
-        } else {
-          // Local state fallback if Supabase not configured
-          const localId = Math.random().toString(36).substring(2, 9);
-          await saveFile(localId, file);
-          finalFileUrl = `local://${localId}`;
-          
-          const newItem: ArchiveItem = {
-            id: localId,
+          const insertData: any = {
             nomor: form.nomor,
             nama: form.nama,
             tanggal_surat: form.tanggal,
             kategori: form.kategori,
             file_url: finalFileUrl,
-            created_at: new Date().toISOString(),
-            user_id: user?.id || '1',
-            target_user_id: form.target_user_id || null
+            user_id: user?.id || '1'
           };
-          const updatedArchives = [newItem, ...archives];
-          setArchives(updatedArchives);
-          localStorage.setItem('garda_archives', JSON.stringify(updatedArchives));
+
+          // Hanya masukkan target_user_id jika ada nilainya
+          if (form.target_user_id) {
+            insertData.target_user_id = form.target_user_id;
+          }
+
+          const { error: dbError } = await supabase
+            .from('archives')
+            .insert(insertData);
+
+          if (dbError) {
+            console.error('Database Insert Error:', dbError);
+            if (dbError.message?.includes('target_user_id')) {
+              throw new Error(`Kolom 'target_user_id' tidak ditemukan di database. \n\nSOLUSI: Jalankan perintah ini di SQL Editor Supabase:\nALTER TABLE archives ADD COLUMN target_user_id TEXT;`);
+            }
+            throw new Error(`Gagal Simpan Database: ${dbError.message}`);
+          }
+          
           success = true;
-          // Ensure initialized flag is set
-          localStorage.setItem('garda_initialized', 'true');
+          await fetchArchives(); // Refresh from DB to ensure sync
+        } else {
+          throw new Error('Supabase tidak terkonfigurasi. Periksa file .env Anda.');
         }
 
         if (success) {
-          console.log('Archive successfully added:', archives[0]);
-          alert('BERHASIL: Dokumen telah disimpan dan dikirim ke unit kerja tujuan.');
+          alert('BERHASIL: Dokumen telah disimpan secara permanen di cloud Supabase.');
           setForm({ nomor: '', nama: '', tanggal: '', kategori: 'Keputusan', target_user_id: '' });
           setFile(null);
           setActiveTab('archive');
         }
       } catch (err: any) {
-        console.error('General error:', err);
-        alert('Terjadi kesalahan saat memproses dokumen.');
+        console.error('Detailed error:', err);
+        alert(`KESALAHAN PENYIMPANAN:\n${err.message}`);
       } finally {
         setUploading(false);
       }
@@ -777,44 +717,42 @@ export default function App() {
     });
 
     const handleDelete = async (id: string) => {
-      console.log('Attempting to delete archive:', id);
+      if (!isSupabaseConfigured || !supabase) {
+        alert('Fitur hapus dinonaktifkan dalam mode offline/simulasi.');
+        return;
+      }
+
+      setLoading(true);
       try {
         const itemToDelete = archives.find(a => a.id === id);
-        if (itemToDelete?.file_url.startsWith('local://')) {
-          const fileId = itemToDelete.file_url.replace('local://', '');
-          await deleteFile(fileId);
-        }
-
-        if (!isSupabaseConfigured || !supabase) {
-          console.log('Simulation mode: deleting from local state');
-          const updatedArchives = archives.filter(a => a.id !== id);
-          setArchives(updatedArchives);
-          localStorage.setItem('garda_archives', JSON.stringify(updatedArchives));
-          setDeletingId(null);
-          return;
-        }
-
-        let query = supabase.from('archives').delete().eq('id', id);
         
-        // Ensure user can only delete their own if not admin
+        // 1. Delete from Supabase Database
+        let query = supabase.from('archives').delete().eq('id', id);
         if (user && user.role !== 'admin') {
           query = query.eq('user_id', user.id);
         }
 
-        const { error } = await query;
-        if (error) throw error;
+        const { error: dbError } = await query;
+        if (dbError) throw dbError;
+
+        // 2. Delete from Supabase Storage if possible
+        if (itemToDelete?.file_url && !itemToDelete.file_url.startsWith('local://')) {
+          try {
+            const urlParts = itemToDelete.file_url.split('/');
+            const fileName = urlParts[urlParts.length - 1];
+            await supabase.storage.from('archives').remove([`legal-docs/${fileName}`]);
+          } catch (storageErr) {
+            console.warn('Could not delete file from storage:', storageErr);
+          }
+        }
         
-        const updatedArchives = archives.filter(a => a.id !== id);
-        setArchives(updatedArchives);
-        localStorage.setItem('garda_archives', JSON.stringify(updatedArchives));
+        setArchives(prev => prev.filter(a => a.id !== id));
         setDeletingId(null);
       } catch (err) {
         console.error('Delete error:', err);
-        // Fallback for demo
-        const updatedArchives = archives.filter(a => a.id !== id);
-        setArchives(updatedArchives);
-        localStorage.setItem('garda_archives', JSON.stringify(updatedArchives));
-        setDeletingId(null);
+        alert('Gagal menghapus arsip dari database.');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -844,19 +782,46 @@ export default function App() {
               {user?.role === 'admin' ? 'Kelola dan telusuri dokumen hukum yang tersimpan.' : 'Lihat dokumen yang dikirimkan kepada Anda.'}
             </p>
           </div>
-          <div className="relative w-full md:w-96 group">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-primary transition-colors" size={20} />
-            <input 
-              type="text" 
-              placeholder="Cari nomor atau nama dokumen..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-16 pr-8 py-5 rounded-[2rem] bg-white border border-white/50 premium-shadow focus:ring-8 focus:ring-blue-500/5 focus:border-brand-primary outline-none transition-all font-bold text-sm md:text-base"
-            />
+          <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+            <button 
+              onClick={() => fetchArchives()}
+              className="flex items-center justify-center space-x-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-brand-dark font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all"
+            >
+              <Database size={16} />
+              <span>Refresh</span>
+            </button>
+            <div className="relative w-full md:w-96 group">
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-primary transition-colors" size={20} />
+              <input 
+                type="text" 
+                placeholder="Cari nomor atau nama dokumen..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full pl-16 pr-8 py-5 rounded-[2rem] bg-white border border-white/50 premium-shadow focus:ring-8 focus:ring-blue-500/5 focus:border-brand-primary outline-none transition-all font-bold text-sm md:text-base"
+              />
+            </div>
           </div>
         </header>
 
-        <div className="bg-white rounded-[3rem] premium-shadow border border-white/50 overflow-hidden">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 space-y-4">
+            <div className="w-12 h-12 border-4 border-brand-primary/20 border-t-brand-primary rounded-full animate-spin" />
+            <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Memuat Data...</p>
+          </div>
+        ) : filteredArchives.length === 0 ? (
+          <div className="bg-white p-12 md:p-20 rounded-[2rem] md:rounded-[3rem] border border-dashed border-slate-200 flex flex-col items-center justify-center text-center space-y-6">
+            <div className="w-20 h-20 md:w-32 md:h-32 bg-slate-50 rounded-[2rem] md:rounded-[3rem] flex items-center justify-center text-slate-300">
+              <Archive size={48} className="md:w-16 md:h-16" />
+            </div>
+            <div>
+              <h3 className="text-lg md:text-2xl font-black text-brand-dark uppercase tracking-tight">Tidak Ada Dokumen</h3>
+              <p className="text-xs md:text-base text-slate-400 font-medium mt-2">
+                {searchQuery ? 'Tidak ada dokumen yang sesuai dengan pencarian Anda.' : 'Belum ada dokumen yang tersimpan di database.'}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-[3rem] premium-shadow border border-white/50 overflow-hidden">
           {/* Desktop Table */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -1041,14 +1006,8 @@ export default function App() {
               </div>
             ))}
           </div>
-
-          {filteredArchives.length === 0 && (
-            <div className="px-6 py-20 text-center text-gray-400">
-              <Archive size={48} className="mx-auto mb-4 opacity-20" />
-              <p>Tidak ada arsip ditemukan.</p>
-            </div>
-          )}
         </div>
+        )}
 
         {/* QR Modal */}
         {selectedQr && (
@@ -1275,6 +1234,44 @@ export default function App() {
                     Kirim Link Reset
                   </button>
                 </form>
+              </div>
+            </div>
+
+            {/* Database Schema Guide */}
+            <div className="bg-white p-6 md:p-10 rounded-[3rem] premium-shadow border border-white/50 space-y-8">
+              <div className="flex items-center space-x-4 pb-4 border-b border-slate-50">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm">
+                  <Database size={20} />
+                </div>
+                <h3 className="text-lg font-black text-brand-dark uppercase tracking-tight">Panduan Database</h3>
+              </div>
+              <div className="space-y-6">
+                <p className="text-sm text-slate-500 font-medium leading-relaxed">
+                  Gunakan kode SQL ini di Dashboard Supabase jika Anda melihat error "column not found".
+                </p>
+                <div className="bg-slate-900 rounded-2xl p-5 overflow-x-auto border border-slate-800 shadow-inner">
+                  <pre className="text-[10px] md:text-xs text-blue-300 font-mono leading-relaxed">
+{`-- JALANKAN DI SQL EDITOR SUPABASE
+ALTER TABLE archives 
+ADD COLUMN IF NOT EXISTS target_user_id TEXT;
+
+ALTER TABLE archives 
+ADD COLUMN IF NOT EXISTS user_id TEXT;
+
+-- Pastikan RLS Aktif
+ALTER TABLE archives ENABLE ROW LEVEL SECURITY;
+
+-- Kebijakan Akses (Testing)
+CREATE POLICY "Allow public access" ON archives 
+FOR ALL USING (true) WITH CHECK (true);`}
+                  </pre>
+                </div>
+                <div className="flex items-start space-x-3 p-4 bg-amber-50 rounded-2xl border border-amber-100">
+                  <AlertCircle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-700 font-medium leading-relaxed">
+                    Pastikan juga Anda sudah membuat <b>Bucket Storage</b> bernama <code className="bg-amber-100 px-1 rounded text-amber-900">archives</code> dengan akses Public di menu Storage Supabase.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
