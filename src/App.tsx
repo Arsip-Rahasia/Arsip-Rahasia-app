@@ -96,7 +96,7 @@ export default function App() {
         const mockData: ArchiveItem[] = [
           { id: '1', nomor: '001/SK/2024', nama: 'Keputusan Direksi A', tanggal_surat: '2024-01-15', kategori: 'Keputusan', file_url: '#', created_at: new Date().toISOString(), user_id: '1', target_user_id: '2' },
           { id: '2', nomor: '002/PER/2024', nama: 'Peraturan Perusahaan B', tanggal_surat: '2024-02-10', kategori: 'Peraturan', file_url: '#', created_at: new Date().toISOString(), user_id: '1', target_user_id: '3' },
-          { id: '3', nomor: '003/KONT/2024', nama: 'Kontrak Vendor C', tanggal_surat: '2024-03-01', kategori: 'Kontrak', file_url: '#', created_at: new Date().toISOString(), user_id: '1', target_user_id: '4' },
+          { id: '3', nomor: '003/KONT/2024', nama: 'Telaah Vendor C', tanggal_surat: '2024-03-01', kategori: 'Telaah', file_url: '#', created_at: new Date().toISOString(), user_id: '1', target_user_id: '4' },
           { id: '4', nomor: '004/ST/2024', nama: 'Surat Tugas D', tanggal_surat: '2024-03-04', kategori: 'Tugas', file_url: '#', created_at: new Date().toISOString(), user_id: '1', target_user_id: '2' },
         ];
         setArchives(mockData);
@@ -340,7 +340,7 @@ export default function App() {
       const counts: Record<string, number> = {
         Keputusan: 0,
         Peraturan: 0,
-        Kontrak: 0,
+        Telaah: 0,
         Tugas: 0
       };
       userArchives.forEach(a => {
@@ -377,7 +377,7 @@ export default function App() {
           return { icon: Gavel, color: 'from-purple-600 to-purple-400', bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-200', shadow: 'shadow-purple-500/30' };
         case 'Peraturan':
           return { icon: Scale, color: 'from-emerald-600 to-emerald-400', bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200', shadow: 'shadow-emerald-500/30' };
-        case 'Kontrak':
+        case 'Telaah':
           return { icon: Handshake, color: 'from-amber-600 to-amber-400', bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200', shadow: 'shadow-amber-500/30' };
         case 'Tugas':
           return { icon: ClipboardList, color: 'from-blue-600 to-blue-400', bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200', shadow: 'shadow-blue-500/30' };
@@ -409,7 +409,7 @@ export default function App() {
             { label: 'Total Arsip', value: userArchives.length, icon: Archive, color: 'from-slate-600 to-slate-400', shadow: 'shadow-slate-500/20', text: 'text-slate-600', bg: 'bg-slate-50' },
             { label: 'Keputusan', value: userArchives.filter(a => a.kategori === 'Keputusan').length, ...getCategoryConfig('Keputusan') },
             { label: 'Peraturan', value: userArchives.filter(a => a.kategori === 'Peraturan').length, ...getCategoryConfig('Peraturan') },
-            { label: 'Kontrak', value: userArchives.filter(a => a.kategori === 'Kontrak').length, ...getCategoryConfig('Kontrak') },
+            { label: 'Telaah', value: userArchives.filter(a => a.kategori === 'Telaah').length, ...getCategoryConfig('Telaah') },
             { label: 'Tugas', value: userArchives.filter(a => a.kategori === 'Tugas').length, ...getCategoryConfig('Tugas') },
           ].map((stat, i) => (
             <motion.div 
@@ -730,7 +730,7 @@ export default function App() {
                   >
                     <option>Keputusan</option>
                     <option>Peraturan</option>
-                    <option>Kontrak</option>
+                    <option>Telaah</option>
                     <option>Tugas</option>
                   </select>
                 </div>
@@ -845,7 +845,7 @@ export default function App() {
           return { icon: Gavel, bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-200' };
         case 'Peraturan':
           return { icon: Scale, bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' };
-        case 'Kontrak':
+        case 'Telaah':
           return { icon: Handshake, bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200' };
         case 'Tugas':
           return { icon: ClipboardList, bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' };
@@ -1189,6 +1189,7 @@ export default function App() {
     ]);
     const [newEmail, setNewEmail] = useState('');
     const [newRole, setNewRole] = useState<User['role']>('user');
+    const [selectedUserEmail, setSelectedUserEmail] = useState(user?.email || '');
     const [passwords, setPasswords] = useState({ old: '', new: '', confirm: '' });
     const [resetEmail, setResetEmail] = useState('');
 
@@ -1204,7 +1205,7 @@ export default function App() {
     const handleUpdatePassword = (e: React.FormEvent) => {
       e.preventDefault();
       if (passwords.new !== passwords.confirm) return toast.error('Konfirmasi password tidak cocok');
-      toast.success('Password berhasil diperbarui!');
+      toast.success(`Password untuk ${selectedUserEmail} berhasil diperbarui!`);
       setPasswords({ old: '', new: '', confirm: '' });
     };
 
@@ -1320,6 +1321,18 @@ export default function App() {
                 <h3 className="text-lg font-black text-brand-dark uppercase tracking-tight">Ubah Password</h3>
               </div>
               <form onSubmit={handleUpdatePassword} className="space-y-6">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2.5 ml-1">Pilih Pengguna</label>
+                  <select 
+                    value={selectedUserEmail}
+                    onChange={e => setSelectedUserEmail(e.target.value)}
+                    className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-brand-primary outline-none transition-all font-bold appearance-none"
+                  >
+                    {users.map(u => (
+                      <option key={u.id} value={u.email}>{u.email} ({u.role})</option>
+                    ))}
+                  </select>
+                </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2.5 ml-1">Password Lama</label>
                   <input 

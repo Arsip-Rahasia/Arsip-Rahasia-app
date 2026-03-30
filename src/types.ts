@@ -1,4 +1,4 @@
-export type Category = 'Keputusan' | 'Peraturan' | 'Kontrak' | 'Tugas';
+export type Category = 'Keputusan' | 'Peraturan' | 'Telaah' | 'Tugas';
 
 export interface ArchiveItem {
   id: string;
