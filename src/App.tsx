@@ -118,7 +118,8 @@ export default function App() {
         'HTL': '1',
         'KEPEGAWAIAN': '2',
         'BAK': '3',
-        'BMN': '4'
+        'BMN': '4',
+        'REMUNERASI': '6'
       };
       const targetId = roleToId[user.role] || user.id;
       query = query.eq('target_user_id', targetId);
@@ -152,7 +153,8 @@ export default function App() {
       { email: 'kepegawaian', password: 'kepegawaian123', id: '2', role: 'KEPEGAWAIAN' },
       { email: 'BAK', password: 'BAK123', id: '3', role: 'BAK' },
       { email: 'BMN', password: 'BMN123', id: '4', role: 'BMN' },
-      { email: 'HTL', password: 'HTL123', id: '5', role: 'HTL' }
+      { email: 'HTL', password: 'HTL123', id: '5', role: 'HTL' },
+      { email: 'REMUNERASI', password: 'REMUNERASI123', id: '6', role: 'REMUNERASI' }
     ];
 
     const foundUser = hardcodedUsers.find(u => u.email === loginForm.email && u.password === loginForm.password);
@@ -329,7 +331,8 @@ export default function App() {
         'HTL': '1',
         'KEPEGAWAIAN': '2',
         'BAK': '3',
-        'BMN': '4'
+        'BMN': '4',
+        'REMUNERASI': '6'
       };
       const targetId = roleToId[user?.role || ''] || user?.id;
       
@@ -354,7 +357,8 @@ export default function App() {
         'Kepegawaian': 0,
         'BAK': 0,
         'BMN': 0,
-        'HTL': 0
+        'HTL': 0,
+        'Remunerasi': 0
       };
       
       userArchives.forEach(a => {
@@ -362,6 +366,7 @@ export default function App() {
         if (a.target_user_id === '2') targetName = 'Kepegawaian';
         else if (a.target_user_id === '3') targetName = 'BAK';
         else if (a.target_user_id === '4') targetName = 'BMN';
+        else if (a.target_user_id === '6') targetName = 'Remunerasi';
         
         counts[targetName]++;
       });
@@ -369,7 +374,7 @@ export default function App() {
       return Object.entries(counts).map(([name, value]) => ({ name, value }));
     }, [userArchives]);
 
-    const TARGET_COLORS = ['#6366f1', '#ec4899', '#f59e0b', '#10b981'];
+    const TARGET_COLORS = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#ef4444'];
 
     const getCategoryConfig = (category: string) => {
       switch (category) {
@@ -566,7 +571,8 @@ export default function App() {
       { id: '1', name: 'HTL' },
       { id: '2', name: 'Kepegawaian' },
       { id: '3', name: 'BAK' },
-      { id: '4', name: 'BMN' }
+      { id: '4', name: 'BMN' },
+      { id: '6', name: 'REMUNERASI' }
     ];
 
     const onDrop = (acceptedFiles: File[]) => {
@@ -831,7 +837,8 @@ export default function App() {
         'HTL': '1',
         'KEPEGAWAIAN': '2',
         'BAK': '3',
-        'BMN': '4'
+        'BMN': '4',
+        'REMUNERASI': '6'
       };
       const targetId = roleToId[user?.role || ''] || user?.id;
       

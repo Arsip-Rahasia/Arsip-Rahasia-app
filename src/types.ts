@@ -15,5 +15,5 @@ export interface ArchiveItem {
 export interface User {
   id: string;
   email: string;
-  role: 'admin' | 'user' | 'BAK' | 'KEPEGAWAIAN' | 'BMN' | 'HTL';
+  role: 'admin' | 'user' | 'BAK' | 'KEPEGAWAIAN' | 'BMN' | 'HTL' | 'REMUNERASI';
 }
