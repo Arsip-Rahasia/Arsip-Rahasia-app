@@ -25,8 +25,8 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const COLORS = ['#001F3F', '#10b981', '#3b82f6', '#f59e0b'];
-const TARGET_COLORS = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#ef4444'];
+const COLORS = ['#001F3F', '#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
+const TARGET_COLORS = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#475569'];
 
 interface DashboardProps {
   user: User | null;
@@ -50,38 +50,39 @@ const Dashboard = ({ user, archives }: DashboardProps) => {
   }, [archives, user]);
 
   const chartData = useMemo(() => {
-    const counts: Record<string, number> = {
-      Keputusan: 0,
-      Peraturan: 0,
-      Telaah: 0,
-      Tugas: 0
-    };
+    const counts: Record<string, number> = {};
+    
     userArchives.forEach(a => {
-      if (counts[a.kategori] !== undefined) counts[a.kategori]++;
+      counts[a.kategori] = (counts[a.kategori] || 0) + 1;
     });
-    return Object.entries(counts).map(([name, value]) => ({ name, value }));
+    
+    // Ensure the 4 main categories are at least present if they have data, 
+    // or just return whatever categories exist in the data.
+    return Object.entries(counts)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
   }, [userArchives]);
 
   const targetChartData = useMemo(() => {
-    const counts: Record<string, number> = {
-      'Kepegawaian': 0,
-      'BAK': 0,
-      'BMN': 0,
-      'HTL': 0,
-      'Remunerasi': 0
+    const targetMap: Record<string, string> = {
+      '1': 'HTL',
+      '2': 'Kepegawaian',
+      '3': 'BAK',
+      '4': 'BMN',
+      '5': 'HTL',
+      '6': 'Remunerasi'
     };
     
+    const counts: Record<string, number> = {};
+    
     userArchives.forEach(a => {
-      let targetName = 'HTL';
-      if (a.target_user_id === '2') targetName = 'Kepegawaian';
-      else if (a.target_user_id === '3') targetName = 'BAK';
-      else if (a.target_user_id === '4') targetName = 'BMN';
-      else if (a.target_user_id === '6') targetName = 'Remunerasi';
-      
-      if (counts[targetName] !== undefined) counts[targetName]++;
+      const targetName = targetMap[a.target_user_id] || 'Umum';
+      counts[targetName] = (counts[targetName] || 0) + 1;
     });
     
-    return Object.entries(counts).map(([name, value]) => ({ name, value }));
+    return Object.entries(counts)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
   }, [userArchives]);
 
   const getCategoryConfig = (category: string) => {

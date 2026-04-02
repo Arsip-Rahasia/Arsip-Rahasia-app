@@ -235,7 +235,7 @@ const ArchiveList = ({
                       {user?.role === 'admin' && (
                         <td className="px-10 py-6">
                           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-slate-100 px-3 py-1 rounded-lg">
-                            {item.target_user_id === '1' ? 'ADMIN' : 
+                            {item.target_user_id === '1' ? 'HTL' : 
                              item.target_user_id === '2' ? 'KEPEGAWAIAN' : 
                              item.target_user_id === '3' ? 'BAK' : 
                              item.target_user_id === '4' ? 'BMN' : 
@@ -339,8 +339,8 @@ const ArchiveList = ({
 
       {/* QR Code Modal */}
       {selectedQr && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white rounded-[2.5rem] p-8 md:p-12 max-w-sm w-full shadow-2xl relative animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-10 md:pt-20 bg-brand-dark/60 backdrop-blur-sm animate-in fade-in duration-300 overflow-y-auto">
+          <div className="bg-white rounded-[2.5rem] p-8 md:p-12 max-w-sm w-full shadow-2xl relative animate-in zoom-in-95 duration-300 my-4">
             <button 
               onClick={() => setSelectedQr(null)}
               className="absolute top-6 right-6 p-2 hover:bg-slate-100 rounded-full transition-colors"
