@@ -12,10 +12,12 @@ import {
   Scale,
   Handshake,
   ClipboardList,
-  X
+  X,
+  DownloadCloud
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
+import JSZip from 'jszip';
 import { supabase, isSupabaseConfigured } from '../supabase';
 import { getFile } from '../db';
 import { ArchiveItem, User } from '../types';
@@ -50,10 +52,25 @@ const ArchiveList = ({
 }: ArchiveListProps) => {
   const [selectedQr, setSelectedQr] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [downloadTarget, setDownloadTarget] = useState('all');
+
+  const getTargetName = (id: string) => {
+    switch (id) {
+      case '1': return 'HTL';
+      case '2': return 'KEPEGAWAIAN';
+      case '3': return 'BAK';
+      case '4': return 'BMN';
+      case '5': return 'HTL';
+      case '6': return 'REMUNERASI';
+      default: return 'UMUM';
+    }
+  };
 
   const filteredArchives = archives.filter(a => {
+    const targetName = getTargetName(a.target_user_id);
     const matchesSearch = a.nama.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          a.nomor.toLowerCase().includes(searchQuery.toLowerCase());
+                          a.nomor.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          targetName.toLowerCase().includes(searchQuery.toLowerCase());
     
     if (user?.role === 'admin') return matchesSearch;
     
@@ -83,6 +100,89 @@ const ArchiveList = ({
         return { icon: ClipboardList, bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' };
       default:
         return { icon: FileText, bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200' };
+    }
+  };
+
+  const handleDownloadAll = async () => {
+    const roleToId: Record<string, string> = {
+      'HTL': '5',
+      'KEPEGAWAIAN': '2',
+      'BAK': '3',
+      'BMN': '4',
+      'REMUNERASI': '6'
+    };
+
+    const archivesToDownload = downloadTarget === 'all' 
+      ? filteredArchives 
+      : filteredArchives.filter(a => a.target_user_id === roleToId[downloadTarget]);
+
+    if (archivesToDownload.length === 0) {
+      toast.error(`Tidak ada file untuk tujuan ${downloadTarget === 'all' ? 'semua' : downloadTarget} yang ditemukan.`);
+      return;
+    }
+
+    setLoading(true);
+    const toastId = toast.loading(`Mempersiapkan penarikan file (${downloadTarget === 'all' ? 'Semua' : downloadTarget})...`);
+    
+    try {
+      const zip = new JSZip();
+      const folderName = downloadTarget === 'all' ? "arsip_garda_semua" : `arsip_garda_${downloadTarget.toLowerCase()}`;
+      const folder = zip.folder(folderName);
+      
+      if (!folder) throw new Error("Gagal membuat folder ZIP");
+
+      const downloadPromises = archivesToDownload.map(async (item, index) => {
+        try {
+          let blob: Blob | null = null;
+          let extension = 'pdf'; // Default
+
+          if (item.file_url.startsWith('local://')) {
+            const id = item.file_url.replace('local://', '');
+            blob = await getFile(id);
+          } else {
+            // Supabase or external URL
+            const response = await fetch(item.file_url);
+            if (!response.ok) throw new Error(`Gagal fetch file: ${item.nama}`);
+            blob = await response.blob();
+            
+            // Try to get extension from URL or content-type
+            const contentType = response.headers.get('content-type');
+            if (contentType?.includes('image/png')) extension = 'png';
+            else if (contentType?.includes('image/jpeg')) extension = 'jpg';
+            else if (contentType?.includes('application/msword')) extension = 'doc';
+            else if (contentType?.includes('application/vnd.openxmlformats-officedocument.wordprocessingml.document')) extension = 'docx';
+          }
+
+          if (blob) {
+            // Clean file name: remove special characters
+            const safeName = item.nama.replace(/[/\\?%*:|"<>]/g, '-');
+            const fileName = `${index + 1}_${safeName}_${item.nomor.replace(/[/\\?%*:|"<>]/g, '-')}.${extension}`;
+            folder.file(fileName, blob);
+          }
+        } catch (err) {
+          console.warn(`Gagal mendownload file ${item.nama}:`, err);
+        }
+      });
+
+      await Promise.all(downloadPromises);
+      
+      const content = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(content);
+      const link = document.createElement('a');
+      link.href = url;
+      const dateStr = new Date().toISOString().split('T')[0];
+      link.download = `GARDA_${downloadTarget.toUpperCase()}_${dateStr}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success(`Berhasil mendownload ${archivesToDownload.length} file (${downloadTarget})`, { id: toastId });
+    } catch (err: any) {
+      console.error('Download all error:', err);
+      toast.error(`Gagal melakukan penarikan file: ${err.message}`, { id: toastId });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -154,18 +254,45 @@ const ArchiveList = ({
           </p>
         </div>
         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
-          <button 
-            onClick={() => fetchArchives()}
-            className="flex items-center justify-center space-x-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-brand-dark font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all"
-          >
-            <Database size={16} />
-            <span>Refresh</span>
-          </button>
+          <div className="flex flex-col md:flex-row gap-2">
+            <button 
+              onClick={() => fetchArchives()}
+              className="flex items-center justify-center space-x-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-brand-dark font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all"
+            >
+              <Database size={16} />
+              <span>Refresh</span>
+            </button>
+            
+            {user?.role === 'admin' && (
+              <div className="flex gap-2">
+                <select 
+                  value={downloadTarget}
+                  onChange={(e) => setDownloadTarget(e.target.value)}
+                  className="px-4 py-3 bg-white border border-slate-200 rounded-2xl text-brand-dark font-bold text-xs uppercase outline-none focus:border-brand-primary transition-all cursor-pointer"
+                >
+                  <option value="all">DOWNLOAD ALL FILE</option>
+                  <option value="BAK">BAK</option>
+                  <option value="BMN">BMN</option>
+                  <option value="KEPEGAWAIAN">KEPEGAWAIAN</option>
+                  <option value="HTL">HTL</option>
+                  <option value="REMUNERASI">REMUNERASI</option>
+                </select>
+                <button 
+                  onClick={handleDownloadAll}
+                  disabled={loading || filteredArchives.length === 0}
+                  className="flex items-center justify-center space-x-2 px-6 py-3 bg-brand-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
+                >
+                  <DownloadCloud size={16} />
+                  <span>Download</span>
+                </button>
+              </div>
+            )}
+          </div>
           <div className="relative w-full md:w-96 group">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-primary transition-colors" size={20} />
             <input 
               type="text" 
-              placeholder="Cari nomor atau nama dokumen..."
+              placeholder="Cari nomor, nama, atau tujuan..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="w-full pl-16 pr-8 py-5 rounded-[2rem] bg-white border border-white/50 premium-shadow focus:ring-8 focus:ring-blue-500/5 focus:border-brand-primary outline-none transition-all font-bold text-sm md:text-base"

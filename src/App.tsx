@@ -117,19 +117,19 @@ export default function App() {
     
     // Hardcoded users for quick access
     const hardcodedUsers = [
-      { email: 'admin', password: 'admin', id: '1', role: 'admin' },
-      { email: 'kepegawaian', password: 'kepegawaian123', id: '2', role: 'KEPEGAWAIAN' },
-      { email: 'BAK', password: 'BAK123', id: '3', role: 'BAK' },
-      { email: 'BMN', password: 'BMN123', id: '4', role: 'BMN' },
-      { email: 'HTL', password: 'HTL123', id: '5', role: 'HTL' },
-      { email: 'REMUNERASI', password: 'REMUNERASI123', id: '6', role: 'REMUNERASI' }
+      { email: 'admin', password: 'admin', id: '1', role: 'admin', name: 'Administrator' },
+      { email: 'kepegawaian', password: 'kepegawaian123', id: '2', role: 'KEPEGAWAIAN', name: 'User Kepegawaian' },
+      { email: 'BAK', password: 'BAK123', id: '3', role: 'BAK', name: 'User BAK' },
+      { email: 'BMN', password: 'BMN123', id: '4', role: 'BMN', name: 'User BMN' },
+      { email: 'HTL', password: 'HTL123', id: '5', role: 'HTL', name: 'User HTL' },
+      { email: 'REMUNERASI', password: 'REMUNERASI123', id: '6', role: 'REMUNERASI', name: 'User Remunerasi' }
     ];
 
     const foundUser = hardcodedUsers.find(u => u.email === loginForm.email && u.password === loginForm.password);
     
     if (foundUser) {
       setIsLoggedIn(true);
-      setUser({ id: foundUser.id, email: foundUser.email, role: foundUser.role as any });
+      setUser({ id: foundUser.id, email: foundUser.email, role: foundUser.role as any, name: foundUser.name });
       return;
     }
 
@@ -148,7 +148,7 @@ export default function App() {
 
       if (data) {
         setIsLoggedIn(true);
-        setUser({ id: data.id, email: data.email, role: data.role });
+        setUser({ id: data.id, email: data.email, role: data.role, name: data.name });
       } else {
         setLoginError('Email atau password salah.');
       }
