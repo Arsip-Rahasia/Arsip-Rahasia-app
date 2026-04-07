@@ -263,7 +263,7 @@ const ArchiveList = ({
               <span>Refresh</span>
             </button>
             
-            {user?.role === 'admin' && (
+            {user?.role === 'admin' ? (
               <div className="flex gap-2">
                 <select 
                   value={downloadTarget}
@@ -286,6 +286,15 @@ const ArchiveList = ({
                   <span>Download</span>
                 </button>
               </div>
+            ) : (
+              <button 
+                onClick={handleDownloadAll}
+                disabled={loading || filteredArchives.length === 0}
+                className="flex items-center justify-center space-x-2 px-6 py-3 bg-brand-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
+              >
+                <DownloadCloud size={16} />
+                <span>Download Semua</span>
+              </button>
             )}
           </div>
           <div className="relative w-full md:w-96 group">
