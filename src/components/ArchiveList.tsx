@@ -244,20 +244,20 @@ const ArchiveList = ({
 
   return (
     <div className="flex flex-col h-[calc(100vh-120px)] space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden">
-      <header className="flex flex-row items-center justify-between shrink-0 gap-4">
-        <div>
-          <h2 className="text-3xl md:text-4xl font-black text-brand-dark tracking-tight uppercase leading-none">
+      <header className="flex flex-row items-center justify-between shrink-0 gap-8 pb-1">
+        <div className="flex flex-col">
+          <h2 className="text-2xl md:text-3xl font-black text-brand-dark tracking-tighter uppercase leading-none whitespace-nowrap">
             {user?.role === 'admin' ? 'DAFTAR ARSIP' : 'PESAN MASUK (INBOX)'}
           </h2>
-          <p className="text-sm md:text-base text-slate-500 font-medium mt-1">
+          <p className="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">
             {user?.role === 'admin' ? 'Kelola dan telusuri dokumen hukum yang tersimpan.' : 'Lihat dokumen yang dikirimkan kepada Anda.'}
           </p>
         </div>
-        <div className="flex flex-row items-center gap-3">
+        <div className="flex flex-row items-center gap-4">
           <div className="flex flex-row gap-2">
             <button 
               onClick={() => fetchArchives()}
-              className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-brand-dark font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm"
+              className="flex items-center justify-center space-x-2 px-4 py-3 bg-white border border-slate-200 rounded-xl text-brand-dark font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm"
             >
               <Database size={14} />
               <span>Refresh</span>
@@ -268,7 +268,7 @@ const ArchiveList = ({
                 <select 
                   value={downloadTarget}
                   onChange={(e) => setDownloadTarget(e.target.value)}
-                  className="px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-brand-dark font-bold text-[10px] uppercase outline-none focus:border-brand-primary transition-all cursor-pointer shadow-sm"
+                  className="px-3 py-3 bg-white border border-slate-200 rounded-xl text-brand-dark font-bold text-[10px] uppercase outline-none focus:border-brand-primary transition-all cursor-pointer shadow-sm"
                 >
                   <option value="all">ALL FILE</option>
                   <option value="BAK">BAK</option>
@@ -280,7 +280,7 @@ const ArchiveList = ({
                 <button 
                   onClick={handleDownloadAll}
                   disabled={loading || filteredArchives.length === 0}
-                  className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-brand-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
+                  className="flex items-center justify-center space-x-2 px-5 py-3 bg-brand-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
                 >
                   <DownloadCloud size={14} />
                   <span>Download</span>
@@ -290,21 +290,21 @@ const ArchiveList = ({
               <button 
                 onClick={handleDownloadAll}
                 disabled={loading || filteredArchives.length === 0}
-                className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-brand-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
+                className="flex items-center justify-center space-x-2 px-5 py-3 bg-brand-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
               >
                 <DownloadCloud size={14} />
                 <span>Download Semua</span>
               </button>
             )}
           </div>
-          <div className="relative w-64 md:w-80 group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-primary transition-colors" size={16} />
+          <div className="relative w-72 md:w-96 group">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-primary transition-colors" size={18} />
             <input 
               type="text" 
               placeholder="Cari nomor, nama, atau tujuan..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-white border border-slate-200 shadow-sm focus:ring-4 focus:ring-blue-500/5 focus:border-brand-primary outline-none transition-all font-bold text-xs"
+              className="w-full pl-14 pr-6 py-3 rounded-xl bg-white border border-slate-200 shadow-sm focus:ring-4 focus:ring-blue-500/5 focus:border-brand-primary outline-none transition-all font-bold text-sm"
             />
           </div>
         </div>
