@@ -243,23 +243,23 @@ const ArchiveList = ({
   };
 
   return (
-    <div className="space-y-6 md:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+    <div className="flex flex-col h-[calc(100vh-120px)] space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden">
+      <header className="flex flex-row items-center justify-between shrink-0 gap-4">
         <div>
-          <h2 className="text-xl md:text-4xl font-black text-brand-dark tracking-tight uppercase">
+          <h2 className="text-3xl md:text-4xl font-black text-brand-dark tracking-tight uppercase leading-none">
             {user?.role === 'admin' ? 'DAFTAR ARSIP' : 'PESAN MASUK (INBOX)'}
           </h2>
-          <p className="text-xs md:text-base text-slate-500 font-medium mt-1">
+          <p className="text-sm md:text-base text-slate-500 font-medium mt-1">
             {user?.role === 'admin' ? 'Kelola dan telusuri dokumen hukum yang tersimpan.' : 'Lihat dokumen yang dikirimkan kepada Anda.'}
           </p>
         </div>
-        <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
-          <div className="flex flex-col md:flex-row gap-2">
+        <div className="flex flex-row items-center gap-3">
+          <div className="flex flex-row gap-2">
             <button 
               onClick={() => fetchArchives()}
-              className="flex items-center justify-center space-x-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-brand-dark font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all"
+              className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-brand-dark font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm"
             >
-              <Database size={16} />
+              <Database size={14} />
               <span>Refresh</span>
             </button>
             
@@ -268,9 +268,9 @@ const ArchiveList = ({
                 <select 
                   value={downloadTarget}
                   onChange={(e) => setDownloadTarget(e.target.value)}
-                  className="px-4 py-3 bg-white border border-slate-200 rounded-2xl text-brand-dark font-bold text-xs uppercase outline-none focus:border-brand-primary transition-all cursor-pointer"
+                  className="px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-brand-dark font-bold text-[10px] uppercase outline-none focus:border-brand-primary transition-all cursor-pointer shadow-sm"
                 >
-                  <option value="all">DOWNLOAD ALL FILE</option>
+                  <option value="all">ALL FILE</option>
                   <option value="BAK">BAK</option>
                   <option value="BMN">BMN</option>
                   <option value="KEPEGAWAIAN">KEPEGAWAIAN</option>
@@ -280,9 +280,9 @@ const ArchiveList = ({
                 <button 
                   onClick={handleDownloadAll}
                   disabled={loading || filteredArchives.length === 0}
-                  className="flex items-center justify-center space-x-2 px-6 py-3 bg-brand-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
+                  className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-brand-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
                 >
-                  <DownloadCloud size={16} />
+                  <DownloadCloud size={14} />
                   <span>Download</span>
                 </button>
               </div>
@@ -290,57 +290,57 @@ const ArchiveList = ({
               <button 
                 onClick={handleDownloadAll}
                 disabled={loading || filteredArchives.length === 0}
-                className="flex items-center justify-center space-x-2 px-6 py-3 bg-brand-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
+                className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-brand-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
               >
-                <DownloadCloud size={16} />
+                <DownloadCloud size={14} />
                 <span>Download Semua</span>
               </button>
             )}
           </div>
-          <div className="relative w-full md:w-96 group">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-primary transition-colors" size={20} />
+          <div className="relative w-64 md:w-80 group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-primary transition-colors" size={16} />
             <input 
               type="text" 
               placeholder="Cari nomor, nama, atau tujuan..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-16 pr-8 py-5 rounded-[2rem] bg-white border border-white/50 premium-shadow focus:ring-8 focus:ring-blue-500/5 focus:border-brand-primary outline-none transition-all font-bold text-sm md:text-base"
+              className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-white border border-slate-200 shadow-sm focus:ring-4 focus:ring-blue-500/5 focus:border-brand-primary outline-none transition-all font-bold text-xs"
             />
           </div>
         </div>
       </header>
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 space-y-4">
-          <div className="w-12 h-12 border-4 border-brand-primary/20 border-t-brand-primary rounded-full animate-spin" />
-          <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Memuat Data...</p>
+        <div className="flex-1 flex flex-col items-center justify-center space-y-4">
+          <div className="w-10 h-10 border-4 border-brand-primary/20 border-t-brand-primary rounded-full animate-spin" />
+          <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Memuat Data...</p>
         </div>
       ) : filteredArchives.length === 0 ? (
-        <div className="bg-white p-12 md:p-20 rounded-[2rem] md:rounded-[3rem] border border-dashed border-slate-200 flex flex-col items-center justify-center text-center space-y-6">
-          <div className="w-20 h-20 md:w-32 md:h-32 bg-slate-50 rounded-[2rem] md:rounded-[3rem] flex items-center justify-center text-slate-300">
-            <Archive size={48} className="md:w-16 md:h-16" />
+        <div className="flex-1 bg-white rounded-[2rem] border border-dashed border-slate-200 flex flex-col items-center justify-center text-center space-y-4">
+          <div className="w-20 h-20 bg-slate-50 rounded-[1.5rem] flex items-center justify-center text-slate-300">
+            <Archive size={40} />
           </div>
           <div>
-            <h3 className="text-lg md:text-2xl font-black text-brand-dark uppercase tracking-tight">Tidak Ada Dokumen</h3>
-            <p className="text-xs md:text-base text-slate-400 font-medium mt-2">
+            <h3 className="text-xl font-black text-brand-dark uppercase tracking-tight">Tidak Ada Dokumen</h3>
+            <p className="text-sm text-slate-400 font-medium mt-1">
               {searchQuery ? 'Tidak ada dokumen yang sesuai dengan pencarian Anda.' : 'Belum ada dokumen yang tersimpan di database.'}
             </p>
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-[3rem] premium-shadow border border-white/50 overflow-hidden">
+        <div className="flex-1 bg-white rounded-[2rem] premium-shadow border border-white flex flex-col min-h-0 overflow-hidden">
           {/* Desktop Table */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <th className="px-10 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Nomor & Nama</th>
-                  <th className="px-10 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Kategori</th>
-                  <th className="px-10 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Tanggal</th>
+          <div className="hidden md:block flex-1 overflow-y-auto">
+            <table className="w-full text-left border-collapse table-fixed">
+              <thead className="sticky top-0 z-10 bg-slate-50/90 backdrop-blur-sm">
+                <tr className="border-b border-slate-100">
+                  <th className="w-[40%] px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Nomor & Nama</th>
+                  <th className="w-[15%] px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Kategori</th>
+                  <th className="w-[15%] px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tanggal</th>
                   {user?.role === 'admin' && (
-                    <th className="px-10 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Tujuan</th>
+                    <th className="w-[15%] px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tujuan</th>
                   )}
-                  <th className="px-10 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Aksi</th>
+                  <th className="w-[15%] px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -349,66 +349,61 @@ const ArchiveList = ({
                   const Icon = config.icon;
                   return (
                     <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="px-10 py-6">
-                        <div className="flex items-center space-x-5">
-                          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shadow-sm", config.bg, config.text)}>
-                            <Icon size={18} />
+                      <td className="px-8 py-4">
+                        <div className="flex items-center space-x-4">
+                          <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shadow-sm shrink-0", config.bg, config.text)}>
+                            <Icon size={16} />
                           </div>
-                          <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.nomor}</p>
-                            <p className="text-sm font-black text-brand-dark group-hover:text-brand-primary transition-colors">{item.nama}</p>
+                          <div className="min-w-0">
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">{item.nomor}</p>
+                            <p className="text-sm font-black text-brand-dark group-hover:text-brand-primary transition-colors truncate">{item.nama}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-10 py-6">
-                        <span className={cn("px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border", config.bg, config.text, config.border)}>
+                      <td className="px-6 py-4">
+                        <span className={cn("px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border whitespace-nowrap", config.bg, config.text, config.border)}>
                           {item.kategori}
                         </span>
                       </td>
-                      <td className="px-10 py-6">
-                        <p className="text-xs font-bold text-slate-600">{item.tanggal_surat}</p>
+                      <td className="px-6 py-4">
+                        <p className="text-xs font-bold text-slate-600 whitespace-nowrap">{item.tanggal_surat}</p>
                       </td>
                       {user?.role === 'admin' && (
-                        <td className="px-10 py-6">
-                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-slate-100 px-3 py-1 rounded-lg">
-                            {item.target_user_id === '1' ? 'HTL' : 
-                             item.target_user_id === '2' ? 'KEPEGAWAIAN' : 
-                             item.target_user_id === '3' ? 'BAK' : 
-                             item.target_user_id === '4' ? 'BMN' : 
-                             item.target_user_id === '5' ? 'HTL' :
-                             item.target_user_id === '6' ? 'REMUNERASI' : 'UMUM'}
+                        <td className="px-6 py-4">
+                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest bg-slate-100 px-2.5 py-1 rounded-lg whitespace-nowrap">
+                            {getTargetName(item.target_user_id)}
                           </span>
                         </td>
                       )}
-                      <td className="px-10 py-6 text-right">
-                        <div className="flex items-center justify-end space-x-2">
+                      <td className="px-8 py-4 text-right">
+                        <div className="flex items-center justify-end space-x-1.5">
                           <button 
                             onClick={() => setSelectedQr(item.file_url)}
-                            className="p-2.5 bg-brand-primary/5 text-brand-primary rounded-xl hover:bg-brand-primary hover:text-white transition-all shadow-sm"
+                            className="p-2 bg-brand-primary/5 text-brand-primary rounded-lg hover:bg-brand-primary hover:text-white transition-all shadow-sm"
                             title="QR Code"
                           >
-                            <QrCode size={16} />
+                            <QrCode size={14} />
                           </button>
                           <button 
                             onClick={() => handleView(item.file_url)}
-                            className="p-2.5 bg-blue-50 text-brand-primary rounded-xl hover:bg-brand-primary hover:text-white transition-all shadow-sm"
+                            className="p-2 bg-blue-50 text-brand-primary rounded-lg hover:bg-brand-primary hover:text-white transition-all shadow-sm"
                             title="Lihat Dokumen"
                           >
-                            <Eye size={16} />
+                            <Eye size={14} />
                           </button>
                           <button 
-                            className="p-2.5 bg-emerald-50 text-brand-success rounded-xl hover:bg-brand-success hover:text-white transition-all shadow-sm"
+                            className="p-2 bg-emerald-50 text-brand-success rounded-lg hover:bg-brand-success hover:text-white transition-all shadow-sm"
                             title="Download"
                           >
-                            <Download size={16} />
+                            <Download size={14} />
                           </button>
                           {user?.role === 'admin' && (
                             <button 
                               onClick={() => handleDelete(item.id)}
-                              className="p-2.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm"
+                              className="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all shadow-sm"
                               title="Hapus"
                             >
-                              <Trash2 size={16} />
+                              <Trash2 size={14} />
                             </button>
                           )}
                         </div>
@@ -421,47 +416,47 @@ const ArchiveList = ({
           </div>
 
           {/* Mobile List */}
-          <div className="md:hidden divide-y divide-slate-50">
+          <div className="md:hidden flex-1 overflow-y-auto divide-y divide-slate-50">
             {filteredArchives.map((item) => {
               const config = getCategoryConfig(item.kategori);
               const Icon = config.icon;
               return (
-                <div key={item.id} className="p-5 space-y-4">
+                <div key={item.id} className="p-4 space-y-3">
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shadow-sm", config.bg, config.text)}>
-                        <Icon size={16} />
+                    <div className="flex items-center space-x-3 min-w-0">
+                      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shadow-sm shrink-0", config.bg, config.text)}>
+                        <Icon size={14} />
                       </div>
-                      <div>
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{item.nomor}</p>
-                        <p className="text-xs font-black text-brand-dark">{item.nama}</p>
+                      <div className="min-w-0">
+                        <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest truncate">{item.nomor}</p>
+                        <p className="text-xs font-black text-brand-dark truncate">{item.nama}</p>
                       </div>
                     </div>
-                    <span className={cn("px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border", config.bg, config.text, config.border)}>
+                    <span className={cn("px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest border shrink-0", config.bg, config.text, config.border)}>
                       {item.kategori}
                     </span>
                   </div>
-                    <div className="flex items-center justify-between pt-2">
-                      <p className="text-[10px] font-bold text-slate-500">{item.tanggal_surat}</p>
-                      <div className="flex items-center space-x-2">
-                        <button 
-                          onClick={() => setSelectedQr(item.file_url)}
-                          className="p-2 bg-brand-primary/5 text-brand-primary rounded-lg"
-                        >
-                          <QrCode size={14} />
-                        </button>
-                        <button 
-                          onClick={() => handleView(item.file_url)}
-                        className="p-2 bg-blue-50 text-brand-primary rounded-lg"
+                  <div className="flex items-center justify-between pt-1">
+                    <p className="text-[9px] font-bold text-slate-500">{item.tanggal_surat}</p>
+                    <div className="flex items-center space-x-1.5">
+                      <button 
+                        onClick={() => setSelectedQr(item.file_url)}
+                        className="p-1.5 bg-brand-primary/5 text-brand-primary rounded-lg"
                       >
-                        <Eye size={14} />
+                        <QrCode size={12} />
+                      </button>
+                      <button 
+                        onClick={() => handleView(item.file_url)}
+                        className="p-1.5 bg-blue-50 text-brand-primary rounded-lg"
+                      >
+                        <Eye size={12} />
                       </button>
                       {user?.role === 'admin' && (
                         <button 
                           onClick={() => handleDelete(item.id)}
-                          className="p-2 bg-red-50 text-red-500 rounded-lg"
+                          className="p-1.5 bg-red-50 text-red-500 rounded-lg"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={12} />
                         </button>
                       )}
                     </div>
