@@ -122,7 +122,7 @@ export default function App() {
       { email: 'BAK', password: 'BAK123', id: '3', role: 'BAK', name: 'User BAK' },
       { email: 'BMN', password: 'BMN123', id: '4', role: 'BMN', name: 'User BMN' },
       { email: 'HTL', password: 'HTL123', id: '5', role: 'HTL', name: 'User HTL' },
-      { email: 'REMUNERASI', password: 'REMUNERASI123', id: '6', role: 'REMUNERASI', name: 'User Remunerasi' }
+      { email: 'remunerasi', password: 'remunerasi123', id: '6', role: 'REMUNERASI', name: 'User Remunerasi' }
     ];
 
     const foundUser = hardcodedUsers.find(u => u.email === loginForm.email && u.password === loginForm.password);
